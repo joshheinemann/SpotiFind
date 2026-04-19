@@ -1,22 +1,20 @@
-#include "Dataset.h"
-#include "Song.h"
+#include "KNN.h"
 #include <queue>
 #include <utility>
 #include <stdexcept>
 #include <cmath>
-#include <iostream>
 #include <algorithm>
 
 struct CompareDistance {
-    bool operator()(const std::pair<double, Song>& a,
-                    const std::pair<double, Song>& b) const {
+    bool operator()(const std::pair<double, int>& a,
+                    const std::pair<double, int>& b) const {
         return a.first < b.first;
     }
 };
 
-double Distance(const Song& a, const Song& b) {                 //euclidian distance
-    std::vector<double> a_features = a.getFeatures();
-    std::vector<double> b_features = b.getFeatures();
+double Distance(const Song& a, const Song& b) {
+    const std::vector<double>& a_features = a.getFeatures();
+    const std::vector<double>& b_features = b.getFeatures();
 
     if (a_features.size() != b_features.size()) {
         throw std::invalid_argument("Songs must have same number of features");
@@ -32,30 +30,34 @@ double Distance(const Song& a, const Song& b) {                 //euclidian dist
     return std::sqrt(sum);
 }
 
-std::vector<std::pair<double, Song>> getFiveClosestKNN(const Song& userpicked, const std::vector<Song>& songs){      
+std::vector<std::pair<double, int>> getFiveClosestKNN(
+    int chosenIndex,
+    const std::vector<Song>& songs
+) {
     std::priority_queue<
-        std::pair<double, Song>,
-        std::vector<std::pair<double, Song>>,
+        std::pair<double, int>,
+        std::vector<std::pair<double, int>>,
         CompareDistance
-    > maxheap; // will use a maxheap to store the 5 most similar songs
+    > maxheap;
 
-    //loop through all of the songs in the dataset. if current song is closer than any of the current 5 in the dataset,
-    //add it and remove the one that is farthest away (top of maxheap)
-    for(const Song& s : songs){
-        if(s.getId() == userpicked.getId()){continue;}
+    const Song& userpicked = songs[chosenIndex];
 
-        double dist = Distance(userpicked, s);
-
-        if(maxheap.size() < 5){
-            maxheap.push({dist, s});
+    for (int i = 0; i < static_cast<int>(songs.size()); i++) {
+        if (i == chosenIndex) {
+            continue;
         }
-        else if(dist < maxheap.top().first){
+
+        double dist = Distance(userpicked, songs[i]);
+
+        if (maxheap.size() < 5) {
+            maxheap.push({dist, i});
+        } else if (dist < maxheap.top().first) {
             maxheap.pop();
-            maxheap.push({dist, s});
+            maxheap.push({dist, i});
         }
     }
 
-    std::vector<std::pair<double, Song>> results;
+    std::vector<std::pair<double, int>> results;
 
     while (!maxheap.empty()) {
         results.push_back(maxheap.top());
@@ -63,7 +65,5 @@ std::vector<std::pair<double, Song>> getFiveClosestKNN(const Song& userpicked, c
     }
 
     std::reverse(results.begin(), results.end());
-
     return results;
-    
 }

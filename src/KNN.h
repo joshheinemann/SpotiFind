@@ -6,8 +6,8 @@
 
 double Distance(const Song& a, const Song& b);
 
-std::vector<std::pair<double, Song>> getFiveClosestKNN(
-    const Song& userpicked,
+std::vector<std::pair<double, int>> getFiveClosestKNN(
+    int chosenIndex,
     const std::vector<Song>& songs
 );
 
